@@ -1,0 +1,6 @@
+id,text,gold_label,gold_category
+1,"Use my promo code EAT10 for 10% off! DM me on WhatsApp.",REJECT,No_Ads
+2,"Great laksa; broth was rich and staff friendly. Will return.",APPROVE,None
+3,"Crypto is the future. Buy BTC now! Nothing to do with this cafe.",REJECT,Irrelevant
+4,"Overpriced scammers. Society is doomed.",REJECT,Rant_No_Visit
+5,"Visited on 18 Aug, ordered set A; cashier fixed a double-charge.",APPROVE,None

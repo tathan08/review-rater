@@ -4,7 +4,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--pred", default="predictions.csv", help="Predictions CSV (id,text,pred_label,pred_category)")
-ap.add_argument("--gold", default="data/sample_reviews.csv", help="Gold CSV (id,text,gold_label,gold_category)")
+ap.add_argument("--gold", default="data/sample/sample_reviews.csv", help="Gold CSV (id,text,gold_label,gold_category)")
 args = ap.parse_args()
 
 if not os.path.exists(args.pred):

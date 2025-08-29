@@ -1,1 +1,154 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
 .venv311/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API Keys and secrets
+*_api_key*
+*secret*
+*password*
+config/secrets.py
+
+# Models and cache
+models/cache/
+models/saved_models/
+.cache/
+*.pkl
+*.pickle
+*.joblib
+
+# HuggingFace cache
+~/.cache/huggingface/
+.cache/huggingface/
+
+# Ollama models
+# ~/.ollama/
+
+# Data files
+# data/raw/
+# data/processed/
+*.csv
+*.tsv
+*.json
+*.jsonl
+*.parquet
+
+# Keep sample data
+!data/sample/sample_reviews.csv
+
+# Results and outputs
+results/predictions/
+results/evaluations/
+results/reports/
+logs/pipeline_logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Coverage and testing
+.coverage
+.pytest_cache/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation builds
+docs/_build/
+site/
+
+# PyCharm
+.idea/
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Large files that shouldn't be committed
+*.h5
+*.hdf5
+*.bin
+*.model
+*.weights
+
+# Diagnostic and intermediate files
+*_diagnostics.csv
+*_debug.csv
+*_temp.csv

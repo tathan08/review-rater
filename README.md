@@ -1,33 +1,162 @@
-# clone/open the repo root (e.g., review-rater/)
+# Review Classification Pipeline
 
+A review classification system for detecting policy violations in Google reviews.
+
+## 🚀 **Google Colab (Recommended)**
+
+The easiest way to run this pipeline is in Google Colab:
+
+1. Upload `notebooks/00_colab_complete_pipeline.ipynb` to [Google Colab](https://colab.research.google.com/)
+2. Add your OpenAI API key to Colab secrets (🔑 icon in sidebar)
+3. Run all cells - everything is pre-configured!
+
+## 💻 **Local Setup (Mac/Windows/Linux)**
+
+### **Prerequisites**
+
+- Python 3.9.X
+- Git
+
+### **1. Clone and Setup**
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
 cd review-rater
 
-# create a clean env on Python 3.11
+# Create virtual environment
+# On Windows:
+python -m venv .venv
+.venv\Scripts\activate
 
-/opt/homebrew/bin/python3.11 -m venv .venv311
-source .venv311/bin/activate
-python -V
+# On Mac/Linux:
+python3 -m venv .venv
+source .venv/bin/activate
 
-# install deps
+# Verify Python version
+python --version
+```
 
-pip install -U pip
+### **2. Install Dependencies**
+
+```bash
+# Install requirements
 pip install -r requirements.txt
 
-# default for prompts
-
+# For Ollama users (optional):
+# Install Ollama from https://ollama.com/
 ollama pull mistral:7b-instruct
+```
 
-# Prompts (Ollama)
+### **3. Run Pipeline Commands**
 
-python -m src.prompt_runner --model mistral:7b-instruct --csv data/sample_reviews.csv --out predictions.csv
-python -m src.evaluate_prompts --pred predictions.csv
+**Test the setup:**
 
-# HF baseline (no prompts)
+```bash
+python test_pipeline_status.py
+```
 
-python -m src.hf_pipeline --csv data/sample_reviews.csv --out predictions_hf.csv
-python -m src.evaluate_prompts --pred predictions_hf.csv
+#### **Option 1: Ollama Classification (Local LLM)**
 
-# Ensemble (recommended)
+```bash
+# Requires Ollama installation
+python -m src.prompt_runner --model mistral:7b-instruct --csv data/sample/sample_reviews.csv --out results/predictions/predictions.csv
+python -m src.evaluate_prompts --pred results/predictions/predictions.csv
+```
 
-python -m src.ensemble --csv data/sample_reviews.csv --out predictions_ens.csv --model mistral:7b-instruct --tau 0.55
-python -m src.evaluate_prompts --pred predictions_ens.csv
+#### **Option 2: HuggingFace Models**
+
+```bash
+python -m src.hf_pipeline --csv data/sample/sample_reviews.csv --out results/predictions/predictions_hf.csv
+python -m src.evaluate_prompts --pred results/predictions/predictions_hf.csv
+```
+
+#### **Option 3: Ensemble (Best Results)**
+
+```bash
+python -m src.ensemble --csv data/sample/sample_reviews.csv --out results/predictions/predictions_ens.csv --model mistral:7b-instruct --tau 0.55
+python -m src.evaluate_prompts --pred results/predictions/predictions_ens.csv
+```
+
+## 🔬 **Pseudo-labeling for HuggingFace Training**
+
+Generate training data for HuggingFace models using GPT:
+
+```python
+from src.pseudo_labelling.gpt_labeller import GPTPseudoLabeler
+from src.config.pipeline_config import config
+import pandas as pd
+
+# Set your OpenAI API key
+config.openai_api_key = "your-openai-api-key"
+
+# Initialize labeler
+labeler = GPTPseudoLabeler(config)
+
+# Generate pseudo labels for training data
+df = pd.read_csv("your_unlabeled_reviews.csv")
+labeled_df = labeler.generate_pseudo_labels(df, sample_size=1000)
+
+# Save for HuggingFace training
+labeled_df.to_csv("training_data_with_pseudo_labels.csv", index=False)
+```
+
+## **Features**
+
+- **Ollama Integration**: Local LLM classification (no API needed)
+- **HuggingFace Models**: Pre-trained transformer models  
+- **Ensemble Classification**: Combines multiple approaches for best results
+- **GPT Pseudo-labeling**: Generate training data (requires OpenAI API key)
+- **Policy Detection**: No_Ads, Irrelevant, Rant_No_Visit categories
+- **Evaluation Metrics**: Complete performance analysis
+
+## **Troubleshooting**
+
+**Environment Issues (Windows/Mac):**
+
+- Use Google Colab instead (zero setup required)
+- Or create a fresh virtual environment
+
+**HuggingFace Library Issues:**
+
+- Run: `pip install --upgrade transformers torch`
+- Google Colab has pre-installed compatible versions
+
+**Ollama Not Working:**
+
+- Install from [Ollama website](https://ollama.com/)
+- Run `ollama serve` in separate terminal  
+- Use HuggingFace pipeline instead
+
+**Platform-Specific Notes:**
+
+- **Windows**: Use `python` and `pip` commands
+- **Mac/Linux**: May need `python3` and `pip3` commands
+- **All Platforms**: Google Colab recommended for hassle-free setup
+
+## **Directory Structure Implementation**
+
+``` bash
+review-rater
+├── src/
+│   ├── config/pipeline_config.py       # Centralized configuration
+│   ├── core/                           # Core utilities and constants
+│   ├── pseudo_labelling/               # GPT pseudo-labeling system  
+│   ├── pipeline/                       # Pipeline orchestration
+│   ├── integration/                    # Component integration
+├── notebooks/                          # Notebook to run Google Colab
+├── data/
+│   ├── raw/                            # For raw input data
+│   ├── processed/                      # For processed data
+│   └── sample/sample_reviews.csv       # Moved from root
+├── models/
+│   ├── saved_models/                   # For trained models
+│   └── cache/                          # For model cache
+├── results/
+│   ├── predictions/                    # All predictions moved here
+│   ├── evaluations/                    # For evaluation results
+│   └── reports/                        # For generated reports
+└── logs/pipeline_logs/                 # For pipeline logs
+├── docs/policy_prompts.md              # Logic for categorising reviews
+├── prompts/                            # Prompt Engineering
+```

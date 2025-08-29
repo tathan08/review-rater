@@ -1,0 +1,6 @@
+{
+  "tfidf": 0.4,
+  "keywords": 0.25,
+  "patterns": 0.2,
+  "sentiment": 0.15
+}

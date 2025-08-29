@@ -1,0 +1,6 @@
+text,true_label,true_category,pred_label,pred_category,weighted_score,is_disagreement,reject_count,tfidf_pred,keywords_pred,patterns_pred,sentiment_pred,tfidf_conf,keywords_conf,patterns_conf,sentiment_conf
+Use my promo code EAT10 for 10% off! DM me on WhatsApp.,REJECT,No_Ads,APPROVE,Spam_ML,0.36585095389530947,True,2,REJECT,REJECT,APPROVE,APPROVE,0.6021273847382737,0.5,1.0,1.0
+Great laksa; broth was rich and staff friendly. Will return.,APPROVE,,APPROVE,None,0.15912871929831357,False,0,APPROVE,APPROVE,APPROVE,APPROVE,0.6021782017542161,1.0,1.0,1.0
+Crypto is the future. Buy BTC now! Nothing to do with this cafe.,REJECT,Irrelevant,APPROVE,Spam_ML,0.3927740308183864,True,3,REJECT,REJECT,APPROVE,REJECT,0.6021273847382737,0.3076923076923077,1.0,0.5
+Overpriced scammers. Society is doomed.,REJECT,Rant_No_Visit,APPROVE,Spam_ML,0.24085095389530947,True,1,REJECT,APPROVE,APPROVE,APPROVE,0.6021273847382737,1.0,1.0,1.0
+"Visited on 18 Aug, ordered set A; cashier fixed a double-charge.",APPROVE,,APPROVE,None,0.15912871929831357,False,0,APPROVE,APPROVE,APPROVE,APPROVE,0.6021782017542161,1.0,1.0,1.0

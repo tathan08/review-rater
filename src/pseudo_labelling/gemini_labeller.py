@@ -1,21 +1,22 @@
 """
-GPT Pseudo-labeling System
-Generates ground truth labels using GPT for policy violation detection
+Gemini Pseudo-labeling System
+Generates ground truth labels using Google's Gemini for policy violation detection
 """
 
 import pandas as pd
 import numpy as np
 import time
+import os
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from tqdm import tqdm
 import json
 
 try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
+    GEMINI_AVAILABLE = False
 
 from ..core.logger import LoggerFactory
 from ..core.constants import POLICY_CATEGORIES, LABELS
@@ -35,21 +36,22 @@ from prompts.policy_prompts import (
     FEW_SHOTS_RANT
 )
 
-class GPTPseudoLabeler:
-    """GPT-based pseudo-labeling system for generating ground truth"""
+class GeminiPseudoLabeler:
+    """Gemini-based pseudo-labeling system for generating ground truth"""
     
     def __init__(self, config):
         self.config = config
-        self.logger = LoggerFactory.create_gpt_logger(config)
-        self.client = None
+        self.logger = LoggerFactory.create_gemini_logger(config)
+        self.model = None
         self.total_calls = 0  # Simple call counter
         
-        # Initialize OpenAI client if available and API key provided
-        if OPENAI_AVAILABLE and hasattr(config, 'openai_api_key') and config.openai_api_key:
-            self.client = OpenAI(api_key=config.openai_api_key)
-            self.logger.info("OpenAI client initialized")
+        # Initialize Gemini client if available and API key provided
+        if GEMINI_AVAILABLE and hasattr(config, 'gemini_api_key') and config.gemini_api_key:
+            genai.configure(api_key=config.gemini_api_key)
+            self.model = genai.GenerativeModel(getattr(config, 'gemini_model', 'gemini-2.5-flash-lite'))
+            self.logger.info("Gemini client initialized")
         else:
-            self.logger.warning("OpenAI client not available or API key not provided")
+            self.logger.warning("Gemini client not available or API key not provided")
         
         # Use the consolidated prompt systems from policy_prompts.py
         self.policy_systems = {
@@ -58,32 +60,23 @@ class GPTPseudoLabeler:
             POLICY_CATEGORIES['RANT_NO_VISIT']: (RANT_NO_VISIT_SYSTEM, FEW_SHOTS_RANT)
         }
     
-    def _call_gpt(self, prompt: str, max_retries: int = 3) -> Optional[str]:
-        """Make API call to GPT with simple retry logic"""
-        if not self.client:
-            self.logger.error("OpenAI client not initialized")
+    def _call_gemini(self, prompt: str, max_retries: int = 3) -> Optional[str]:
+        """Make API call to Gemini with simple retry logic"""
+        if not self.model:
+            self.logger.error("Gemini model not initialized")
             return None
         
         for attempt in range(max_retries):
             try:
-                model = getattr(self.config, 'gpt_model', 'gpt-3.5-turbo')
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that analyzes Google reviews for policy violations."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=150,
-                    temperature=0.1  # Low temperature for consistent results
-                )
+                response = self.model.generate_content(prompt)
                 
                 # Simple call tracking
                 self.total_calls += 1
                 
-                return response.choices[0].message.content.strip()
+                return response.text.strip()
                 
             except Exception as e:
-                self.logger.warning(f"GPT API call attempt {attempt + 1} failed: {str(e)}")
+                self.logger.warning(f"Gemini API call attempt {attempt + 1} failed: {str(e)}")
                 if attempt < max_retries - 1:
                     time.sleep(2 ** attempt)  # Exponential backoff
                 
@@ -97,7 +90,7 @@ class GPTPseudoLabeler:
             # Build the complete prompt using the consolidated function
             prompt = build_prompt(system_prompt, review_text[:1000], few_shots)
             
-            response = self._call_gpt(prompt)
+            response = self._call_gemini(prompt)
             
             if response:
                 try:
@@ -113,7 +106,7 @@ class GPTPseudoLabeler:
                     }
                         
                 except Exception as e:
-                    self.logger.warning(f"Error parsing GPT response for {policy_category}: {str(e)}")
+                    self.logger.warning(f"Error parsing Gemini response for {policy_category}: {str(e)}")
                     # Use default values on parsing error
                     results[policy_category] = {
                         'violation': False, 
@@ -167,13 +160,23 @@ class GPTPseudoLabeler:
             return df_copy.sample(min(sample_size, len(df_copy)), random_state=42).drop('text_length', axis=1)
     
     def generate_pseudo_labels(self, df: pd.DataFrame, sample_size: int = 500, 
-                             save_progress: bool = True) -> pd.DataFrame:
+                             save_progress: bool = True, output_dir: Optional[str] = None) -> pd.DataFrame:
         """Generate pseudo labels for a sample of reviews"""
         self.logger.info(f"Starting pseudo-labeling for {min(sample_size, len(df))} reviews")
         
-        if not self.client:
-            self.logger.error("Cannot generate pseudo-labels: OpenAI client not initialized")
+        if not self.model:
+            self.logger.error("Cannot generate pseudo-labels: Gemini model not initialized")
             return pd.DataFrame()
+        
+        # Use config default if no output_dir specified
+        if output_dir is None:
+            output_dir = getattr(self.config.data, 'pseudo_label_dir', 'data/pseudo-label')
+        
+        # Ensure output_dir is a string at this point
+        assert isinstance(output_dir, str), "output_dir must be a string"
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
         
         # Ensure proper column structure
         df = ensure_id_column(df)
@@ -229,11 +232,19 @@ class GPTPseudoLabeler:
             # Save progress periodically
             if save_progress and (idx + 1) % progress_interval == 0:
                 temp_df = pd.DataFrame(results)
-                temp_file = f"pseudo_labels_progress_{idx+1}.csv"
+                temp_file = os.path.join(output_dir, f"pseudo_labels_progress_{idx+1}.csv")
                 temp_df.to_csv(temp_file, index=False)
                 self.logger.info(f"Progress saved: {temp_file}")
         
         results_df = pd.DataFrame(results)
+        
+        # Save final results to output directory
+        if save_progress and len(results_df) > 0:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            final_file = os.path.join(output_dir, f"pseudo_labels_final_{timestamp}.csv")
+            results_df.to_csv(final_file, index=False)
+            self.logger.info(f"Final pseudo-labels saved: {final_file}")
+        
         self.logger.info(f"Pseudo-labeling completed. Generated {len(results_df)} labels")
         self.logger.info(f"Total API calls made: {self.total_calls}")
         

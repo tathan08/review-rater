@@ -22,7 +22,7 @@ DEFAULT_MODELS = {
     'SENTIMENT': "distilbert-base-uncased-finetuned-sst-2-english",
     'TOXIC': "unitary/toxic-bert", 
     'ZERO_SHOT': "facebook/bart-large-mnli",
-    'GPT_DEFAULT': "gpt-3.5-turbo",
+    'GEMINI_DEFAULT': "gemini-2.5-flash-lite",
     'OLLAMA_DEFAULT': "mistral:7b-instruct"
 }
 

@@ -98,9 +98,9 @@ class LoggerFactory:
         )
     
     @staticmethod
-    def create_gpt_logger(config) -> PipelineLogger:
-        """Create specialized logger for GPT operations"""
-        return LoggerFactory.create_pipeline_logger(config, "GPT")
+    def create_gemini_logger(config) -> PipelineLogger:
+        """Create specialized logger for Gemini operations"""
+        return LoggerFactory.create_pipeline_logger(config, "Gemini")
     
     @staticmethod
     def create_error_logger(config) -> PipelineLogger:

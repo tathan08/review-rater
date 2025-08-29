@@ -50,8 +50,9 @@ def test_basic_functionality():
     print()
     print("4. Testing pseudo-labeling structure...")
     try:
-        from src.pseudo_labelling.gpt_labeller import GPTPseudoLabeler
-        labeler = GPTPseudoLabeler(config)
+        from src.pseudo_labelling.gemini_labeller import GeminiPseudoLabeler
+        from src.config.pipeline_config import config
+        labeler = GeminiPseudoLabeler(config)
         print("   ✅ Pseudo-labeling system initialized")
         print("   ✅ Policy systems configured for:", list(labeler.policy_systems.keys()))
     except Exception as e:
@@ -74,7 +75,10 @@ def test_basic_functionality():
     directories = [
         "data/sample",
         "data/raw", 
-        "data/processed",
+        "data/clean",  # Updated from processed to clean
+        "data/pseudo-label",  # New directory
+        "data/training",  # New directory
+        "data/testing",  # New directory
         "results/predictions",
         "results/evaluations",
         "results/reports",

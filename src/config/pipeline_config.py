@@ -29,8 +29,11 @@ class DataConfig:
     """Configuration for data paths and settings"""
     data_dir: str = "data"
     raw_data_dir: str = "data/raw"
-    processed_data_dir: str = "data/processed"
+    processed_data_dir: str = "data/clean"  # Renamed from processed to clean
     sample_data_dir: str = "data/sample"
+    pseudo_label_dir: str = "data/pseudo-label"  # New directory for pseudo-labels
+    training_dir: str = "data/training"  # New directory for training data
+    testing_dir: str = "data/testing"  # New directory for testing data
     
     # Default input file
     sample_reviews_file: str = "data/sample/sample_reviews.csv"
@@ -72,9 +75,9 @@ class PipelineConfig:
     max_workers: int = 4
     cache_predictions: bool = True
     
-    # GPT configuration
-    openai_api_key: str = ""
-    gpt_model: str = "gpt-3.5-turbo"
+    # Gemini configuration
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash-lite"
     
     # Advanced settings
     enable_performance_monitoring: bool = True
@@ -88,6 +91,9 @@ class PipelineConfig:
             self.data.raw_data_dir,
             self.data.processed_data_dir,
             self.data.sample_data_dir,
+            self.data.pseudo_label_dir,
+            self.data.training_dir,
+            self.data.testing_dir,
             self.output.predictions_dir,
             self.output.evaluations_dir,
             self.output.reports_dir,
@@ -98,21 +104,21 @@ class PipelineConfig:
             os.makedirs(directory, exist_ok=True)
     
     @classmethod
-    def create_demo_config(cls, openai_api_key: str = "") -> 'PipelineConfig':
+    def create_demo_config(cls, gemini_api_key: str = "") -> 'PipelineConfig':
         """Create configuration optimized for demo/testing"""
         return cls(
             batch_size=16,
-            openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
             cache_predictions=True,
             verbose_logging=True
         )
     
     @classmethod
-    def create_production_config(cls, openai_api_key: str = "") -> 'PipelineConfig':
+    def create_production_config(cls, gemini_api_key: str = "") -> 'PipelineConfig':
         """Create configuration optimized for production use"""
         return cls(
             batch_size=64,
-            openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
             cache_predictions=True,
             verbose_logging=False
         )

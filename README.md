@@ -7,7 +7,7 @@ A review classification system for detecting policy violations in Google reviews
 The easiest way to run this pipeline is in Google Colab:
 
 1. Upload `notebooks/00_colab_complete_pipeline.ipynb` to [Google Colab](https://colab.research.google.com/)
-2. Add your OpenAI API key to Colab secrets (🔑 icon in sidebar)
+2. Add your Gemini API key to Colab secrets (🔑 icon in sidebar)
 3. Run all cells - everything is pre-configured!
 
 ## 💻 **Local Setup (Mac/Windows/Linux)**
@@ -80,18 +80,18 @@ python -m src.evaluate_prompts --pred results/predictions/predictions_ens.csv
 
 ## 🔬 **Pseudo-labeling for HuggingFace Training**
 
-Generate training data for HuggingFace models using GPT:
+Generate training data for HuggingFace models using Google Gemini:
 
 ```python
-from src.pseudo_labelling.gpt_labeller import GPTPseudoLabeler
+from src.pseudo_labelling.gemini_labeller import GeminiPseudoLabeler
 from src.config.pipeline_config import config
 import pandas as pd
 
-# Set your OpenAI API key
-config.openai_api_key = "your-openai-api-key"
+# Set your Gemini API key
+config.gemini_api_key = "your-gemini-api-key"
 
 # Initialize labeler
-labeler = GPTPseudoLabeler(config)
+labeler = GeminiPseudoLabeler(config)
 
 # Generate pseudo labels for training data
 df = pd.read_csv("your_unlabeled_reviews.csv")
@@ -106,7 +106,7 @@ labeled_df.to_csv("training_data_with_pseudo_labels.csv", index=False)
 - **Ollama Integration**: Local LLM classification (no API needed)
 - **HuggingFace Models**: Pre-trained transformer models  
 - **Ensemble Classification**: Combines multiple approaches for best results
-- **GPT Pseudo-labeling**: Generate training data (requires OpenAI API key)
+- **Gemini Pseudo-labeling**: Generate training data (requires API key)
 - **Policy Detection**: No_Ads, Irrelevant, Rant_No_Visit categories
 - **Evaluation Metrics**: Complete performance analysis
 
@@ -141,13 +141,16 @@ review-rater
 ├── src/
 │   ├── config/pipeline_config.py       # Centralized configuration
 │   ├── core/                           # Core utilities and constants
-│   ├── pseudo_labelling/               # GPT pseudo-labeling system  
+│   ├── pseudo_labelling/               # Gemini pseudo-labeling system  
 │   ├── pipeline/                       # Pipeline orchestration
 │   ├── integration/                    # Component integration
 ├── notebooks/                          # Notebook to run Google Colab
 ├── data/
 │   ├── raw/                            # For raw input data
-│   ├── processed/                      # For processed data
+│   ├── clean/                          # For cleaned/processed data (renamed from processed)
+│   ├── pseudo-label/                   # For pseudo-labeled data from Gemini
+│   ├── training/                       # For training data split
+│   ├── testing/                        # For testing data split
 │   └── sample/sample_reviews.csv       # Moved from root
 ├── models/
 │   ├── saved_models/                   # For trained models

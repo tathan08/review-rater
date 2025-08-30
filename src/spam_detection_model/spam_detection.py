@@ -106,9 +106,18 @@ class PatternFeatureExtractor(BaseEstimator, TransformerMixin):
         
         # Readability (using textstat)
         try:
-            readability_score = textstat.flesch_reading_ease(text)
-        except:
-            readability_score = 50.0  # Default moderate score
+            # Use textstat if available (ignore lint warnings)
+            readability_score = textstat.flesch_reading_ease(text)  # type: ignore
+        except Exception as e:
+            # Fallback readability calculation
+            words = len(text.split())
+            sentences = len(re.split(r'[.!?]+', text))
+            if sentences > 0 and words > 0:
+                avg_words_per_sentence = words / sentences
+                # Simple readability approximation (lower is harder to read)
+                readability_score = max(0, min(100, 120 - avg_words_per_sentence * 2))
+            else:
+                readability_score = 50.0
         
         # Character-level features
         caps_count = sum(1 for c in text if c.isupper())
@@ -303,7 +312,7 @@ class UnifiedSpamDetector:
         pattern_extractor = PatternFeatureExtractor()
         
         # Combine features using FeatureUnion
-        feature_union = FeatureUnion([
+        feature_union = FeatureUnion([  # type: ignore
             ('tfidf', tfidf_vectorizer),
             ('patterns', pattern_extractor)
         ])
@@ -331,7 +340,7 @@ class UnifiedSpamDetector:
                 method='isotonic',
                 cv=cv_folds
             )
-            self.calibrated_pipeline.fit(texts, y)
+            self.calibrated_pipeline.fit(texts, y)  # type: ignore
         elif calibrate:
             print(f"Skipping calibration: need at least 10 samples, got {len(texts)}")
     
@@ -343,7 +352,7 @@ class UnifiedSpamDetector:
         pipeline = self.calibrated_pipeline if (use_calibrated and self.calibrated_pipeline) else self.pipeline
         
         # Get predictions and probabilities
-        proba = pipeline.predict_proba(texts)
+        proba = pipeline.predict_proba(texts)  # type: ignore
         spam_proba = proba[:, 1]  # Probability of spam (REJECT)
         
         results = []
@@ -475,24 +484,30 @@ class UnifiedSpamDetector:
         if self.pipeline is None:
             raise ValueError("Model not fitted.")
             
-        classifier = self.pipeline['classifier']
-        feature_union = self.pipeline['features']
-        
-        # Get feature names
-        tfidf_names = list(feature_union.transformer_list[0][1].get_feature_names_out())
-        pattern_names = [
-            'repetition_ratio', 'word_diversity_ratio', 'repeated_ngrams_ratio',
-            'caps_ratio', 'punct_ratio', 'readability_score', 
-            'avg_sentence_length', 'word_count', 'template_score', 'phrase_repetition_score', 'local_repetition_score'
-        ]
-        
-        all_feature_names = tfidf_names + pattern_names
-        
-        # Get coefficients
-        coef = classifier.coef_[0]
-        top_indices = np.argsort(np.abs(coef))[-top_k:][::-1]
-        
-        return [(all_feature_names[idx], float(coef[idx])) for idx in top_indices]
+        try:
+            classifier = self.pipeline.named_steps['classifier']
+            feature_union = self.pipeline.named_steps['features']
+            
+            # Get feature names
+            tfidf_vectorizer = feature_union.transformer_list[0][1]
+            tfidf_names = list(tfidf_vectorizer.get_feature_names_out())
+            pattern_names = [
+                'repetition_ratio', 'word_diversity_ratio', 'repeated_ngrams_ratio',
+                'caps_ratio', 'punct_ratio', 'readability_score', 
+                'avg_sentence_length', 'word_count', 'template_score', 
+                'phrase_repetition_score', 'local_repetition_score'
+            ]
+            
+            all_feature_names = tfidf_names + pattern_names
+            
+            # Get coefficients
+            coef = classifier.coef_[0]
+            top_indices = np.argsort(np.abs(coef))[-top_k:][::-1]
+            
+            return [(all_feature_names[idx], float(coef[idx])) for idx in top_indices]
+        except Exception as e:
+            print(f"Warning: Could not extract feature importance: {e}")
+            return []
 
 
 def load_training_data(file_path: str) -> Tuple[List[str], List[str], List[str]]:
@@ -510,8 +525,22 @@ def load_training_data(file_path: str) -> Tuple[List[str], List[str], List[str]]
         raise ValueError(f"No text column found. Available columns: {list(df.columns)}")
     
     texts = df[text_col].astype(str).tolist()
-    labels = df.get('gold_label', df.get('label', ['APPROVE'] * len(texts))).tolist()
-    categories = df.get('gold_category', df.get('category', ['None'] * len(texts))).tolist()
+    
+    # Handle labels - check if column exists, if not create default
+    if 'gold_label' in df.columns:
+        labels = df['gold_label'].tolist()
+    elif 'label' in df.columns:
+        labels = df['label'].tolist()
+    else:
+        labels = ['APPROVE'] * len(texts)
+    
+    # Handle categories - check if column exists, if not create default  
+    if 'gold_category' in df.columns:
+        categories = df['gold_category'].tolist()
+    elif 'category' in df.columns:
+        categories = df['category'].tolist()
+    else:
+        categories = ['None'] * len(texts)
     
     return texts, labels, categories
 

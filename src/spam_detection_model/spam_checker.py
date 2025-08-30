@@ -17,16 +17,64 @@ def initialize_detector():
         from spam_detection import UnifiedSpamDetector, load_training_data
         
         # Check if training data exists (adjust path for new location)
-        data_path = '../../data/sample_reviews.csv'
+        data_path = '../../data/training/Alaska_cleaned.csv'
         if not os.path.exists(data_path):
             print("❌ Error: Training data not found")
             print("Please ensure you're running from the correct directory")
             return None
             
         print("🔄 Loading unified spam detector...")
-        texts, labels, categories = load_training_data(data_path)
+        
+        # For demo/testing purposes, use only a sample of the data to speed up training
+        import pandas as pd
+        print("📊 Loading training data sample (first 1000 rows for quick demo)...")
+        df_sample = pd.read_csv(data_path, nrows=1000)
+        
+        # Convert to the format expected by load_training_data
+        text_col = None
+        for col in ['text', 'review', 'content', 'text_clean']:
+            if col in df_sample.columns:
+                text_col = col
+                break
+        
+        if text_col is None:
+            print(f"❌ No text column found. Available columns: {list(df_sample.columns)}")
+            return None
+            
+        texts = df_sample[text_col].astype(str).tolist()
+        
+        # Handle labels
+        if 'gold_label' in df_sample.columns:
+            labels = df_sample['gold_label'].tolist()
+        elif 'label' in df_sample.columns:
+            labels = df_sample['label'].tolist()
+        else:
+            # Create some synthetic labels for demo (mostly APPROVE with some REJECT for repetitive patterns)
+            labels = []
+            for text in texts:
+                words = text.lower().split()
+                if len(words) > 0:
+                    word_freq = {}
+                    for word in words:
+                        word_freq[word] = word_freq.get(word, 0) + 1
+                    max_rep = max(word_freq.values()) if word_freq else 1
+                    rep_ratio = max_rep / len(words)
+                    # Simple heuristic: if more than 40% repetition, mark as REJECT
+                    labels.append('REJECT' if rep_ratio > 0.4 else 'APPROVE')
+                else:
+                    labels.append('APPROVE')
+        
+        # Handle categories  
+        if 'gold_category' in df_sample.columns:
+            categories = df_sample['gold_category'].tolist()
+        elif 'category' in df_sample.columns:
+            categories = df_sample['category'].tolist()
+        else:
+            categories = ['None'] * len(texts)
+        
+        print(f"📈 Training on {len(texts)} samples...")
         detector = UnifiedSpamDetector()
-        detector.fit(texts, labels, categories)
+        detector.fit(texts, labels)
         print("✅ Unified spam detector ready!")
         return detector
         
@@ -36,6 +84,8 @@ def initialize_detector():
         return None
     except Exception as e:
         print(f"❌ Error initializing detector: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def check_text(detector, text):

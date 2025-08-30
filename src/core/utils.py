@@ -4,6 +4,7 @@ Common functions used across the review rater system
 """
 
 import json
+import os
 import re
 import subprocess
 from typing import Dict, List, Optional, Any, Union
@@ -159,10 +160,15 @@ def save_results_with_diagnostics(
     include_diagnostics: bool = True
 ) -> None:
     """Save results to CSV with optional diagnostics file"""
+    # Create output directory if it doesn't exist
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
     df = pd.DataFrame(results)
     
     # Main results file with core columns
-    core_columns = ["id", "text", "pred_label", "pred_category"]
+    core_columns = ["id", "text", "final_label", "pred_category"]
     main_df = df[[col for col in core_columns if col in df.columns]]
     main_df.to_csv(output_path, index=False)
     

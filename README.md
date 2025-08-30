@@ -41,7 +41,7 @@ Google Colab provides the simplest way to run this pipeline with zero local conf
 
 2. **Upload Data and Models**
    - Download locally the entire folder from [our Google Drive](https://drive.google.com/drive/folders/18Quq2TdpINtoCb7dYonyJW2hlk_5CD3e?usp=drive_link)
-   - Navigate to models/saved_models and **unzip the review_classifier_195222_checkpoint93.zip**, renaming the output folder to "checkpoint93". Your file directory should look like this, with models/saved_models/review_classifier_20250830_195222 and models/saved_models/unified_spam_detector*.joblib ![alt text](img/6170418487705584021.jpg)
+   - Navigate to models/saved_models and **unzip the review_classifier_195222_checkpoint93.zip**, renaming the output folder to "checkpoint93". Your file directory should look like this. ![alt text](img/6170418487705584022.jpg)
    - Replace (drag-and-drop) the models/ and data/ folder in Google Colab with your local files
    - We have done this due to Github's limit on file size and for ease of use with Google Colab
 

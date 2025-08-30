@@ -1,165 +1,215 @@
 # Review Classification Pipeline
 
-A review classification system for detecting policy violations in Google reviews.
+A machine learning system for automatically detecting policy violations in Google reviews using advanced natural language processing techniques.
 
-## 🚀 **Google Colab (Recommended)**
+## Project Overview
 
-The easiest way to run this pipeline is in Google Colab:
+This project implements a comprehensive review classification pipeline designed to identify and categorize policy violations in user-generated review content. The system combines multiple machine learning approaches including transformer models, ensemble methods, and pseudo-labeling techniques to achieve high accuracy in content moderation.
 
-1. Upload `notebooks/00_colab_complete_pipeline.ipynb` to [Google Colab](https://colab.research.google.com/)
-2. Add your Gemini API key to Colab secrets (🔑 icon in sidebar)
-3. Run all cells - everything is pre-configured!
+### Key Capabilities
 
-## 💻 **Local Setup (Mac/Windows/Linux)**
+- **Multi-category Policy Detection**: Identifies No_Ads, Irrelevant, Rant_No_Visit violations
+- **Ensemble Classification**: Combines multiple model approaches for optimal performance
+- **Pseudo-labeling System**: Generates high-quality training data using Google Gemini API
+- **Production-Ready Pipeline**: Complete training and inference workflow
+- **Comprehensive Evaluation**: Detailed performance metrics and analysis
 
-### **Prerequisites**
+### Technical Architecture
 
-- Python 3.9.X
-- Git
+The pipeline consists of two main phases:
 
-### **1. Clone and Setup**
+1. **Training Phase** (`00_colab_complete_pipeline.ipynb`): Environment setup, data processing, pseudo-labeling, model training, and evaluation
+2. **Inference Phase** (`01_inference_pipeline.ipynb`): Production deployment for processing new review data
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd review-rater
+## Setup Instructions
 
-# Create virtual environment
-# On Windows:
-python -m venv .venv
-.venv\Scripts\activate
+### Google Colab Setup
 
-# On Mac/Linux:
-python3 -m venv .venv
-source .venv/bin/activate
+Google Colab provides the simplest way to run this pipeline with zero local configuration required.
 
-# Verify Python version
-python --version
+#### Prerequisites
+
+- Google account for Colab access
+- Gemini API key (for pseudo-labeling features)
+
+### Setup Steps for Evaluation / Testing Model
+
+1. **Open the Inference Notebook**
+   - Navigate to [Google Colab](https://colab.research.google.com/)
+   - Open a Notebook, select "Github" and key in this repository's [URL](https://github.com/tathan08/review-rater.git)
+   - Upload [`01_inference_pipeline.ipynb`](https://github.com/tathan08/review-rater/blob/main/notebooks/01_inference_pipeline.ipynb)
+
+2. **Upload Data and Models**
+   - Download locally the entire folder from [our Google Drive](https://drive.google.com/drive/folders/18Quq2TdpINtoCb7dYonyJW2hlk_5CD3e?usp=drive_link)
+   - Navigate to models/saved_models and **unzip the review_classifier_195222_checkpoint93.zip**, renaming the output folder to "checkpoint93". Your file directory should look like this, with models/saved_models/review_classifier_20250830_195222 and models/saved_models/unified_spam_detector*.joblib ![alt text](img/6170418487705584021.jpg)
+   - Replace (drag-and-drop) the models/ and data/ folder in Google Colab with your local files
+   - We have done this due to Github's limit on file size and for ease of use with Google Colab
+
+3. **Upload Evaluation Data**
+   - Place your evaluation data (the Google Reviews you want to classify) into data/actual
+   - Your files should only be in .csv or .json
+   - The files should only contain 2 columns, **id** and **text**
+
+4. **Execute the Pipeline**
+   - Run all cells in sequence
+   - The notebook automatically handles package installation and environment setup
+   - All dependencies are pre-configured for the Colab environment
+
+5. **Review the Results**
+   - Classification results are displayed in the final cell with detailed analysis
+   - Results are automatically saved to `results/inference/inference_results_TIMESTAMP.csv`
+   - Summary report is saved to `results/inference/summary_report_TIMESTAMP.json`
+   - Download the CSV file from Colab to view complete results locally
+   - The notebook displays approval/rejection statistics and policy violation categories
+
+### Setup Steps for Pseudo-labelling and Training Model
+
+1. **Open the Training Notebook**
+   - Navigate to [Google Colab](https://colab.research.google.com/)
+   - Open a Notebook, select "Github" and key in this repository's [URL](https://github.com/tathan08/review-rater.git)
+   - Upload [`00_colab_complete_pipeline.ipynb`](https://github.com/tathan08/review-rater/blob/main/notebooks/00_colab_complete_pipeline.ipynb)
+
+2. **(Optional) Upload Pre-labelled Pseudo-label and Clean Data**
+   - Download locally the **data/** directory from [our Google Drive](https://drive.google.com/drive/folders/18Quq2TdpINtoCb7dYonyJW2hlk_5CD3e?usp=drive_link)
+   - Upload (drag-and-drop) the **data/** folder into Google Colab.
+
+3. **Execute the Pipeline**
+   - Run all cells in sequence
+   - The notebook automatically handles package installation and environment setup
+   - All dependencies are pre-configured for the Colab environment
+   - After training, models are saved in models/saved_models for use later on
+
+## How to Reproduce Results
+
+### Training Pipeline Execution
+
+The complete training pipeline can be executed through the Colab notebook with the following workflow:
+
+#### Phase 1: Environment and Data Setup
+
+```python
+# - Package installation and GPU configuration
+# - Directory structure creation
+# - Sample data loading and validation
 ```
 
-### **2. Install Dependencies**
+#### Phase 2: Model Training and Pseudo-labeling
 
-```bash
-# Install requirements
-pip install -r requirements.txt
-
-# For Ollama users (optional):
-# Install Ollama from https://ollama.com/
-ollama pull mistral:7b-instruct
+```python
+# - HuggingFace model configuration
+# - Gemini pseudo-labeling with checkpoint system
+# - Training data preparation and model fine-tuning
 ```
 
-### **3. Run Pipeline Commands**
+#### Phase 3: Evaluation and Export
 
-**Test the setup:**
-
-```bash
-python test_pipeline_status.py
+```python
+# - Model performance evaluation
+# - Results analysis and visualization
+# - Trained model export for production / inference use
 ```
 
-#### **Option 1: Ollama Classification (Local LLM)**
+### Expected Results
 
-```bash
-# Requires Ollama installation
-python -m src.prompt_runner --model mistral:7b-instruct --csv data/sample/sample_reviews.csv --out results/predictions/predictions.csv
-python -m src.evaluate_prompts --pred results/predictions/predictions.csv
+After successful pipeline execution, you should observe:
+
+#### Inference
+
+- **Classification Results**: Each review labeled as APPROVE or REJECT with confidence scores
+- **Policy Violation Detection**: Automatic categorization into No_Ads, Irrelevant, Rant_No_Visit, or None (if review is approved)
+- **Detailed Analysis**: Comprehensive breakdown of approval/rejection statistics and violation types
+- **Output Files**: CSV results file and JSON summary report saved to `results/inference/`
+- **Performance Metrics**: High-confidence classifications with detailed reasoning for each decision
+
+#### Training
+
+- **Model Performance**: Accuracy metrics for each policy category
+- **Training Data**: High-quality pseudo-labeled dataset in `data/pseudo-label/`
+- **Saved Models**: Trained models exported to `models/saved_models/`
+- **Evaluation Reports**: Comprehensive analysis in `results/evaluations/`
+
+### Data Flow Architecture
+
+```text
+                data/clean
+                     ↓
+            Gemini API Pseudo-Labeling
+                     ↓  data/pseudo-label
+            HuggingFace Model Training
+                     ↓
+            models/saved_models → Production Inference
 ```
 
-#### **Option 2: HuggingFace Models**
+### Command Line Interface (Local Setup)
+
+For local development, the pipeline supports command-line execution:
+
+#### HuggingFace Pipeline
 
 ```bash
 python -m src.hf_pipeline --csv data/sample/sample_reviews.csv --out results/predictions/predictions_hf.csv
 python -m src.evaluate_prompts --pred results/predictions/predictions_hf.csv
 ```
 
-#### **Option 3: Ensemble (Best Results)**
+#### Ensemble Classification
 
 ```bash
-python -m src.ensemble --csv data/sample/sample_reviews.csv --out results/predictions/predictions_ens.csv --model mistral:7b-instruct --tau 0.55
+python -m src.ensemble --csv data/sample/sample_reviews.csv --out results/predictions/predictions_ens.csv --tau 0.55
 python -m src.evaluate_prompts --pred results/predictions/predictions_ens.csv
 ```
 
-## 🔬 **Pseudo-labeling for HuggingFace Training**
+### Troubleshooting Common Issues
 
-Generate training data for HuggingFace models using Google Gemini:
+#### Environment Configuration
 
-```python
-from src.pseudo_labelling.gemini_labeller import GeminiPseudoLabeler
-from src.config.pipeline_config import config
-import pandas as pd
+- **Dependency Conflicts**: Use Google Colab for guaranteed compatibility
+- **GPU Access**: Colab provides free GPU access; local setup requires CUDA configuration
+- **Memory Issues**: Reduce batch sizes in local configurations
 
-# Set your Gemini API key
-config.gemini_api_key = "your-gemini-api-key"
+#### API Integration
 
-# Initialize labeler
-labeler = GeminiPseudoLabeler(config)
+- **Gemini API Limits**: The pseudo-labeling system includes automatic rate limiting and checkpoint recovery
+- **Authentication Errors**: Verify API key configuration in Colab secrets or environment variables
 
-# Generate pseudo labels for training data
-df = pd.read_csv("your_unlabeled_reviews.csv")
-labeled_df = labeler.generate_pseudo_labels(df, sample_size=1000)
+#### Performance Optimization
 
-# Save for HuggingFace training
-labeled_df.to_csv("training_data_with_pseudo_labels.csv", index=False)
-```
+- **Training Speed**: Use GPU acceleration in Colab or local CUDA setup
+- **Memory Usage**: Adjust model parameters for available system resources
 
-## **Features**
+## Directory Structure
 
-- **Ollama Integration**: Local LLM classification (no API needed)
-- **HuggingFace Models**: Pre-trained transformer models  
-- **Ensemble Classification**: Combines multiple approaches for best results
-- **Gemini Pseudo-labeling**: Generate training data (requires API key)
-- **Policy Detection**: No_Ads, Irrelevant, Rant_No_Visit categories
-- **Evaluation Metrics**: Complete performance analysis
-
-## **Troubleshooting**
-
-**Environment Issues (Windows/Mac):**
-
-- Use Google Colab instead (zero setup required)
-- Or create a fresh virtual environment
-
-**HuggingFace Library Issues:**
-
-- Run: `pip install --upgrade transformers torch`
-- Google Colab has pre-installed compatible versions
-
-**Ollama Not Working:**
-
-- Install from [Ollama website](https://ollama.com/)
-- Run `ollama serve` in separate terminal  
-- Use HuggingFace pipeline instead
-
-**Platform-Specific Notes:**
-
-- **Windows**: Use `python` and `pip` commands
-- **Mac/Linux**: May need `python3` and `pip3` commands
-- **All Platforms**: Google Colab recommended for hassle-free setup
-
-## **Directory Structure Implementation**
-
-``` bash
-review-rater
+```text
+review-rater/
 ├── src/
 │   ├── config/pipeline_config.py       # Centralized configuration
 │   ├── core/                           # Core utilities and constants
 │   ├── pseudo_labelling/               # Gemini pseudo-labeling system  
 │   ├── pipeline/                       # Pipeline orchestration
 │   ├── integration/                    # Component integration
-├── notebooks/                          # Notebook to run Google Colab
+├── notebooks/                          # Colab execution notebooks
 ├── data/
-│   ├── raw/                            # For raw input data
-│   ├── clean/                          # For cleaned/processed data (renamed from processed)
-│   ├── pseudo-label/                   # For pseudo-labeled data from Gemini
-│   ├── training/                       # For training data split
-│   ├── testing/                        # For testing data split
-│   └── sample/sample_reviews.csv       # Moved from root
+│   ├── raw/                            # Raw input data
+│   ├── clean/                          # Cleaned/processed data
+│   ├── actual/                         # Actual data / reviews to be classified
+│   ├── pseudo-label/                   # Pseudo-labeled data from Gemini
+│   ├── training/                       # Training data split
+│   ├── testing/                        # Testing data split
+│   └── sample/sample_reviews.csv       # Sample data for testing
 ├── models/
-│   ├── saved_models/                   # For trained models
-│   └── cache/                          # For model cache
+│   ├── saved_models/                   # Trained models
+│   └── cache/                          # Model cache
 ├── results/
-│   ├── predictions/                    # All predictions moved here
-│   ├── evaluations/                    # For evaluation results
-│   └── reports/                        # For generated reports
-└── logs/pipeline_logs/                 # For pipeline logs
-├── docs/policy_prompts.md              # Logic for categorising reviews
-├── prompts/                            # Prompt Engineering
+│   ├── predictions/                    # Prediction outputs
+│   ├── evaluations/                    # Evaluation results
+│   ├── inference/                      # Inference model results
+│   └── reports/                        # Generated reports
+└── logs/pipeline_logs/                 # Pipeline execution logs
 ```
+
+## Team Member Contributions
+
+- **See Kai Teng - Data Engineer**: Data pipeline, preprocessing, feature extraction
+- **Chua Kai Jie, Emerson - ML Engineer 1**: LLM prompt engineering, HuggingFace model
+- **Ow Jun Duan - ML Engineer 2**: Spam detection model, ensemble methods
+- **Tan Athan - Pipeline Engineer**: End-to-end pipeline integration, GPT pseudo-labeling
+- **Seow Chengsi - Evaluation Engineer**: Metrics, testing, performance analysis

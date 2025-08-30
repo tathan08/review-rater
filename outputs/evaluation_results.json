@@ -1,0 +1,25 @@
+{
+  "binary_classification": {
+    "accuracy": 0.4,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "category_classification": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "confidence_stats": {
+    "mean": 0.7364533245588735,
+    "std": 0.09948586801591644,
+    "min": 0.6072259691816135,
+    "max": 0.8408712807016865
+  },
+  "method_weights": {
+    "tfidf": 0.4,
+    "keywords": 0.25,
+    "patterns": 0.2,
+    "sentiment": 0.15
+  }
+}

@@ -26,6 +26,10 @@ MANIFEST
 # Virtual environments
 .venv/
 .venv311/
+
+__pycache__/
+*.pyc
+
 venv/
 env/
 ENV/

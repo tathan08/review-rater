@@ -1,6 +1,5 @@
 import argparse
 import pandas as pd
-import re 
 
 from prompts.policy_prompts import (
     build_prompt,
@@ -8,14 +7,8 @@ from prompts.policy_prompts import (
     IRRELEVANT_SYSTEM, FEW_SHOTS_IRRELEVANT,
     RANT_NO_VISIT_SYSTEM, FEW_SHOTS_RANT,
 )
-from .utils import run_ollama, extract_json
-
-
-AD_SOLICIT_PAT = re.compile(r"(promo\s*code|referr?al|use\s+code|discount\s*code|coupon|dm\s+me|whats?app|telegram|wa\.me|t\.me|contact\s+me|order\s+via|book\s+now|call\s+\+?\d)", re.I)
-LINK_PAT = re.compile(r"https?://|www\.", re.I)
-OFFTOPIC_PAT = re.compile(r"\b(crypto|bitcoin|btc|politics|election|stock tips|forex|nft|blockchain)\b", re.I)
-VISIT_MARKERS = re.compile(r"\b(i|we)\s+(visited|went|came|ordered|ate|bought|tried|dined)\b", re.I)
-PLACE_REFERENCES = re.compile(r"\b(this (place|shop|restaurant|cafe|store|hotel)|here)\b", re.I)
+from .core.utils import run_ollama, extract_json, preclassify_review, save_results_with_diagnostics
+from .core.constants import POLICY_CATEGORIES, LABELS
 
 def preclassify(text: str):
     """Hard guardrails:
@@ -39,31 +32,31 @@ def preclassify(text: str):
 
 def classify_one(text: str, model: str):
 
-    rule = preclassify(text)
+    rule = preclassify_review(text)
     if rule:
-        return {"label": "REJECT", "category": rule, "raw": {"rule": True}}
+        return {"label": LABELS['REJECT'], "category": rule, "raw": {"rule": True}}
 
     outputs = {}
     for cat, system, shots in [
-        ("No_Ads", NO_ADS_SYSTEM, FEW_SHOTS_NO_ADS),
-        ("Irrelevant", IRRELEVANT_SYSTEM, FEW_SHOTS_IRRELEVANT),
-        ("Rant_No_Visit", RANT_NO_VISIT_SYSTEM, FEW_SHOTS_RANT),
+        (POLICY_CATEGORIES['NO_ADS'], NO_ADS_SYSTEM, FEW_SHOTS_NO_ADS),
+        (POLICY_CATEGORIES['IRRELEVANT'], IRRELEVANT_SYSTEM, FEW_SHOTS_IRRELEVANT),
+        (POLICY_CATEGORIES['RANT_NO_VISIT'], RANT_NO_VISIT_SYSTEM, FEW_SHOTS_RANT),
     ]:
         prompt = build_prompt(system, text, shots)
         raw = run_ollama(model, prompt)
         try:
             js = extract_json(raw)
         except Exception as e:
-            js = {"label":"APPROVE","category":"None","rationale":f"ParseFail:{e}","confidence":0.0,"flags":{}}
+            js = {"label":LABELS['APPROVE'],"category":POLICY_CATEGORIES['NONE'],"rationale":f"ParseFail:{e}","confidence":0.0,"flags":{}}
         # ensure defaults
         js.setdefault("confidence", 0.0)
         outputs[cat] = js
 
     # Collect only rejects
-    rejects = [(cat, js) for cat, js in outputs.items() if js.get("label") == "REJECT"]
+    rejects = [(cat, js) for cat, js in outputs.items() if js.get("label") == LABELS['REJECT']]
 
     if len(rejects) == 0:
-        return {"label":"APPROVE","category":"None","raw":outputs}
+        return {"label":LABELS['APPROVE'],"category":POLICY_CATEGORIES['NONE'],"raw":outputs}
 
     # choose the reject with highest confidence
     cat_best, js_best = max(rejects, key=lambda kv: kv[1].get("confidence", 0.0))
@@ -74,13 +67,13 @@ def classify_one(text: str, model: str):
         # lightweight semantic tie-breakers
         txt = text.lower()
         if any(w in txt for w in ["promo", "code", "referral", "dm", "whatsapp", "telegram", "coupon", "use code", "http", "www"]):
-            cat_best = "No_Ads"
+            cat_best = POLICY_CATEGORIES['NO_ADS']
         elif any(w in txt for w in ["scam", "scammers", "ripoff", "rip-off", "overpriced", "terrible", "awful", "worst"]):
-            cat_best = "Rant_No_Visit"
+            cat_best = POLICY_CATEGORIES['RANT_NO_VISIT']
         else:
-            cat_best = "Irrelevant"
+            cat_best = POLICY_CATEGORIES['IRRELEVANT']
 
-    return {"label":"REJECT","category":cat_best,"raw":outputs}
+    return {"label":LABELS['REJECT'],"category":cat_best,"raw":outputs}
 
 def main():
     ap = argparse.ArgumentParser()
@@ -90,18 +83,30 @@ def main():
     args = ap.parse_args()
 
     df = pd.read_csv(args.csv)
+    df.columns = df.columns.str.strip().str.lower()
+    
+    # Find text column
+    text_col = next((c for c in ["text", "review", "content", "body"] if c in df.columns), None)
+    if not text_col:
+        raise SystemExit(f"No text column found in {args.csv}. Have: {list(df.columns)}")
+    
+    # Ensure ID column
+    if "id" not in df.columns:
+        df["id"] = range(1, len(df) + 1)
+
     preds = []
     for _, row in df.iterrows():
-        res = classify_one(row["text"], args.model)
+        res = classify_one(row[text_col], args.model)
         preds.append({
             "id": row["id"],
-            "text": row["text"],
+            "text": row[text_col],
             "pred_label": res["label"],
             "pred_category": res["category"]
         })
         print(f"[{row['id']}] -> {res['label']} / {res['category']}")
 
-    pd.DataFrame(preds).to_csv(args.out, index=False)
+    # Use consolidated save function
+    save_results_with_diagnostics(preds, args.out, include_diagnostics=False)
     print(f"Wrote {args.out}")
 
 if __name__ == "__main__":

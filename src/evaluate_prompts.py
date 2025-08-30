@@ -16,11 +16,19 @@ def pick_pred_label_column(df: pd.DataFrame) -> str:
         return "pred_label"
     raise SystemExit("Neither 'pred_label' nor 'final_label' found in predictions CSV.")
 
+def normalize_label(s):
+    """Normalize label strings to uppercase canonical format"""
+    return (str(s).strip().upper()) if pd.notna(s) else s
+
+def normalize_category(s):
+    """Normalize category strings"""
+    return str(s).strip() if pd.notna(s) else s
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pred", default="predictions.csv",
+    ap.add_argument("--pred", default="results/predictions/predictions.csv",
                     help="Predictions CSV; accepts columns from old (pred_label) or new (final_label) pipelines.")
-    ap.add_argument("--gold", default="data/sample_reviews.csv",
+    ap.add_argument("--gold", default="data/sample/sample_reviews.csv",
                     help="Gold CSV with columns: id,text,gold_label,gold_category")
     args = ap.parse_args()
 
@@ -43,32 +51,24 @@ def main():
     pred_label_col = pick_pred_label_column(df)
 
     # Normalize label/category strings to uppercase canonical for labels and plain string for categories
-    # (Keeps your 'REJECT'/'APPROVE' exactly as-is if already uppercase)
-    def norm_label(s):
-        return (str(s).strip().upper()) if pd.notna(s) else s
-
-    def norm_cat(s):
-        return str(s).strip() if pd.notna(s) else s
-
     if "gold_label" in df.columns:
-        df["gold_label"] = df["gold_label"].map(norm_label)
+        df["gold_label"] = df["gold_label"].map(normalize_label)
     else:
         raise SystemExit("Gold CSV must contain 'gold_label' column.")
 
     if pred_label_col in df.columns:
-        df[pred_label_col] = df[pred_label_col].map(norm_label)
+        df[pred_label_col] = df[pred_label_col].map(normalize_label)
     else:
         raise SystemExit(f"Predictions CSV must contain '{pred_label_col}' column after compatibility aliasing.")
 
     # Category columns may be missing on either side
     if "gold_category" in df.columns:
-        df["gold_category"] = df["gold_category"].map(norm_cat)
+        df["gold_category"] = df["gold_category"].map(normalize_category)
     else:
-        # Keep a column for downstream logic even if missing
         df["gold_category"] = None
 
     if "pred_category" in df.columns:
-        df["pred_category"] = df["pred_category"].map(norm_cat)
+        df["pred_category"] = df["pred_category"].map(normalize_category)
     else:
         df["pred_category"] = None
 

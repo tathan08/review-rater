@@ -1,0 +1,6 @@
+id,text,final_label,pred_category,reasons
+1,Use my promo code EAT10 for 10% off! DM me on WhatsApp.,REJECT,No_Ads,Policy:No_Ads
+2,Great laksa; broth was rich and staff friendly. Will return.,APPROVE,None,
+3,Crypto is the future. Buy BTC now! Nothing to do with this cafe.,REJECT,Irrelevant,Policy:Irrelevant
+4,Overpriced scammers. Society is doomed.,REJECT,No_Ads,Policy:No_Ads
+5,"Visited on 18 Aug, ordered set A; cashier fixed a double-charge.",APPROVE,None,

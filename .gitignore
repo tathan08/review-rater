@@ -152,3 +152,4 @@ dmypy.json
 *_diagnostics.csv
 *_debug.csv
 *_temp.csv
+*.pyc 
